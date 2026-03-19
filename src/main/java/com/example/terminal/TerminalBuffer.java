@@ -99,12 +99,12 @@ public class TerminalBuffer {
         return Math.max(min, Math.min(max, value));
     }
 
-    public char getCharacterAt(int row, int column) {
+    public char getCharacterAt(int column, int row) {
         validateScreenPosition(column, row);
         return screen.get(row).get(column).getCharacter();
     }
 
-    public TextAttributes getAttributesAt(int row, int column) {
+    public TextAttributes getAttributesAt(int column, int row) {
         validateScreenPosition(column, row);
         return screen.get(row).get(column).getAttributes();
     }
@@ -151,19 +151,86 @@ public class TerminalBuffer {
             return;
         }
 
-        int row = cursor.getRow();
-        int column = cursor.getColumn();
-
         for (int i = 0; i < text.length(); i++) {
-            if (column >= width) {
-                break;
-            }
+            int row = cursor.getRow();
+            int column = cursor.getColumn();
 
             char ch = text.charAt(i);
             screen.get(row).set(column, new Cell(ch, currentAttributes));
-            column++;
+
+            advanceCursorForWrite();
+        }
+    }
+
+    private void advanceCursorForWrite() {
+        if (cursor.getColumn() < width - 1) {
+            cursor.setPosition(cursor.getColumn() + 1, cursor.getRow());
+        } else {
+            wrapToNextLine();
+        }
+    }
+
+    private void wrapToNextLine() {
+        if (cursor.getRow() < height - 1) {
+            cursor.setPosition(0, cursor.getRow() + 1);
+        } else {
+            scrollUp();
+            cursor.setPosition(0, height - 1);
+        }
+    }
+
+    private void scrollUp() {
+        List<Cell> topLine = screen.remove(0);
+        addToScrollback(topLine);
+        screen.add(createEmptyLine());
+    }
+
+    private void addToScrollback(List<Cell> line) {
+        if (maxScrollback == 0) {
+            return;
         }
 
-        setCursorPosition(column, row);
+        scrollback.add(copyLine(line));
+
+        if (scrollback.size() > maxScrollback) {
+            scrollback.remove(0);
+        }
+    }
+
+    private List<Cell> copyLine(List<Cell> source) {
+        return new ArrayList<>(source);
+    }
+
+    public int getScrollbackSize() {
+        return scrollback.size();
+    }
+
+    public String getScrollbackLineAsString(int row) {
+        if (row < 0 || row >= scrollback.size()) {
+            throw new IndexOutOfBoundsException("scrollback row out of bounds: " + row);
+        }
+
+        StringBuilder sb = new StringBuilder(width);
+        for (Cell cell : scrollback.get(row)) {
+            sb.append(cell.getCharacter());
+        }
+        return sb.toString();
+    }
+
+    public String getAllContentAsString() {
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < scrollback.size(); i++) {
+            sb.append(getScrollbackLineAsString(i)).append("\n");
+        }
+
+        for (int i = 0; i < height; i++) {
+            sb.append(getLineAsString(i));
+            if (i < height - 1) {
+                sb.append("\n");
+            }
+        }
+
+        return sb.toString();
     }
 }

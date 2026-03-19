@@ -106,4 +106,57 @@ class TerminalBufferTest {
         assertEquals('A', buffer.getCharacterAt(0, 0));
         assertEquals(attrs, buffer.getAttributesAt(0, 0));
     }
+
+    @Test
+    void shouldWrapToNextLineWhenReachingEndOfLine() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 3, 10);
+
+        buffer.writeText("abcdef");
+
+        assertEquals("abcde", buffer.getLineAsString(0));
+        assertEquals("f    ", buffer.getLineAsString(1));
+    }
+
+    @Test
+    void shouldScrollWhenWritingPastBottomOfScreen() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+
+        buffer.writeText("abcdefghijk");
+
+        assertEquals(1, buffer.getScrollbackSize());
+        assertEquals("abcde", buffer.getScrollbackLineAsString(0));
+        assertEquals("fghij", buffer.getLineAsString(0));
+        assertEquals("k    ", buffer.getLineAsString(1));
+    }
+
+    @Test
+    void shouldKeepOnlyNewestScrollbackLinesUpToMaxSize() {
+        TerminalBuffer buffer = new TerminalBuffer(3, 2, 2);
+
+        buffer.writeText("abcdefghi");   // visible: def / ghi, scrollback: abc
+        buffer.writeText("jklmno");      // more scrolling
+
+        assertEquals(2, buffer.getScrollbackSize());
+    }
+
+    @Test
+    void shouldNotStoreScrollbackWhenMaxScrollbackIsZero() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 0);
+
+        buffer.writeText("abcdefghijk");
+
+        assertEquals(0, buffer.getScrollbackSize());
+    }
+
+    @Test
+    void shouldReturnScrollbackAndScreenContentTogether() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+
+        buffer.writeText("abcdefghijk");
+
+        assertEquals(
+                "abcde\nfghij\nk    ",
+                buffer.getAllContentAsString()
+        );
+    }
 }
