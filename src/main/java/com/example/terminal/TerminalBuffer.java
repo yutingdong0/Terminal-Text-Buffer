@@ -98,4 +98,72 @@ public class TerminalBuffer {
     private int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
     }
+
+    public char getCharacterAt(int row, int column) {
+        validateScreenPosition(column, row);
+        return screen.get(row).get(column).getCharacter();
+    }
+
+    public TextAttributes getAttributesAt(int row, int column) {
+        validateScreenPosition(column, row);
+        return screen.get(row).get(column).getAttributes();
+    }
+
+    public String getLineAsString(int row) {
+        validateRow(row);
+        StringBuilder sb = new StringBuilder(width);
+        for (Cell cell : screen.get(row)) {
+            sb.append(cell.getCharacter());
+        }
+        return sb.toString();
+    }
+
+    public String getScreenContentAsString() {
+        StringBuilder sb = new StringBuilder();
+        for (int row = 0; row < height; row++) {
+            sb.append(getLineAsString(row));
+            if (row < height - 1) {
+                sb.append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    private void validateScreenPosition(int column, int row) {
+        validateColumn(column);
+        validateRow(row);
+    }
+
+    private void validateRow(int row) {
+        if (row < 0 || row >= height) {
+            throw new IndexOutOfBoundsException("row must be between 0 and " + (height - 1));
+        }
+    }
+
+    private void validateColumn(int column) {
+        if (column < 0 || column >= width) {
+            throw new IndexOutOfBoundsException("column must be between 0 and " + (width - 1));
+        }
+    }
+
+    public void writeText(String text) {
+        if (text == null || text.isEmpty()) {
+            return;
+        }
+
+        int row = cursor.getRow();
+        int column = cursor.getColumn();
+
+        for (int i = 0; i < text.length(); i++) {
+            if (column >= width) {
+                break;
+            }
+
+            char ch = text.charAt(i);
+            screen.get(row).set(column, new Cell(ch, currentAttributes));
+            column++;
+        }
+
+        setCursorPosition(column, row);
+    }
 }
