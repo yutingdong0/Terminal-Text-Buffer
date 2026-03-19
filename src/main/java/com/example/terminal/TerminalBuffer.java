@@ -300,4 +300,52 @@ public class TerminalBuffer {
 
         return screen.get(row - scrollback.size());
     }
+
+    public void insertText(String text) {
+        if (text == null || text.isEmpty()) {
+            return;
+        }
+
+        for (int i = 0; i < text.length(); i++) {
+            insertChar(cursor.getColumn(), cursor.getRow(), text.charAt(i), currentAttributes);
+            advanceCursorForWrite();
+        }
+    }
+
+    private void insertChar(int column, int row, char ch, TextAttributes attributes) {
+        Cell carry = new Cell(ch, attributes);
+        int currentRow = row;
+        int currentColumn = column;
+
+        while (true) {
+            List<Cell> line = screen.get(currentRow);
+
+            Cell overflow = line.get(width - 1);
+
+            for (int i = width - 1; i > currentColumn; i--) {
+                line.set(i, line.get(i - 1));
+            }
+
+            line.set(currentColumn, carry);
+
+            if (isEmptyCell(overflow)) {
+                return;
+            }
+
+            carry = overflow;
+            currentColumn = 0;
+
+            if (currentRow < height - 1) {
+                currentRow++;
+            } else {
+                scrollUp();
+                currentRow = height - 1;
+            }
+        }
+    }
+
+    private boolean isEmptyCell(Cell cell) {
+        return cell.getCharacter() == ' '
+                && TextAttributes.defaults().equals(cell.getAttributes());
+    }
 }

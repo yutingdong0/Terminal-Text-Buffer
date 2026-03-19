@@ -224,4 +224,87 @@ class TerminalBufferTest {
         assertEquals("fghij", buffer.getGlobalLineAsString(1));
         assertEquals("k    ", buffer.getGlobalLineAsString(2));
     }
+
+    @Test
+    void shouldInsertTextIntoEmptyLine() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+
+        buffer.insertText("ab");
+
+        assertEquals("ab   ", buffer.getLineAsString(0));
+    }
+
+    @Test
+    void shouldShiftExistingCharactersRightWhenInserting() {
+        TerminalBuffer buffer = new TerminalBuffer(6, 2, 10);
+
+        buffer.writeText("hello");
+        buffer.setCursorPosition(1, 0);
+        buffer.insertText("X");
+
+        assertEquals("hXello", buffer.getLineAsString(0));
+    }
+
+    @Test
+    void shouldWrapOverflowToNextLineWhenInserting() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+
+        buffer.writeText("abcde");
+        buffer.setCursorPosition(2, 0);
+        buffer.insertText("XY");
+
+        assertEquals("abXYc", buffer.getLineAsString(0));
+        assertEquals("de   ", buffer.getLineAsString(1));
+    }
+
+    @Test
+    void shouldScrollWhenInsertOverflowsLastLine() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+
+        buffer.writeText("abcdefghi");
+        buffer.setCursorPosition(2, 1);
+        buffer.insertText("XYZ");
+
+        assertTrue(buffer.getScrollbackSize() >= 1);
+    }
+
+    @Test
+    void shouldInsertAndPropagateOverflowAcrossLines() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 3, 10);
+
+        buffer.writeText("abcdefghijklm");
+        buffer.setCursorPosition(3, 0);
+        buffer.insertText("XY");
+
+        assertEquals("abcXY", buffer.getLineAsString(0));
+    }
+
+    @Test
+    void shouldPreserveAttributesOfShiftedCellsDuringInsert() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+
+        TextAttributes red = new TextAttributes(
+                TerminalColor.RED,
+                TerminalColor.DEFAULT,
+                java.util.EnumSet.of(TextStyle.BOLD)
+        );
+        TextAttributes green = new TextAttributes(
+                TerminalColor.GREEN,
+                TerminalColor.DEFAULT,
+                java.util.EnumSet.noneOf(TextStyle.class)
+        );
+
+        buffer.setCurrentAttributes(red);
+        buffer.writeText("A");
+
+        buffer.setCurrentAttributes(green);
+        buffer.setCursorPosition(0, 0);
+        buffer.insertText("B");
+
+        assertEquals('B', buffer.getCharacterAt(0, 0));
+        assertEquals(green, buffer.getAttributesAt(0, 0));
+
+        assertEquals('A', buffer.getCharacterAt(1, 0));
+        assertEquals(red, buffer.getAttributesAt(1, 0));
+    }
 }

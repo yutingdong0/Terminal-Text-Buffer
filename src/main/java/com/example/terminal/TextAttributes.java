@@ -30,4 +30,18 @@ public final class TextAttributes {
     public Set<TextStyle> getStyles() {
         return EnumSet.copyOf(styles);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TextAttributes that)) return false;
+        return foreground == that.foreground
+                && background == that.background
+                && styles.equals(that.styles);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(foreground, background, styles);
+    }
 }
