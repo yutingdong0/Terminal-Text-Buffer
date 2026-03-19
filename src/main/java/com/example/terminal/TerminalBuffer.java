@@ -348,4 +348,22 @@ public class TerminalBuffer {
         return cell.getCharacter() == ' '
                 && TextAttributes.defaults().equals(cell.getAttributes());
     }
+
+    public char getScrollbackCharacterAt(int column, int row) {
+        validateScrollbackRow(row);
+        validateColumn(column);
+        return scrollback.get(row).get(column).getCharacter();
+    }
+
+    public TextAttributes getScrollbackAttributesAt(int column, int row) {
+        validateScrollbackRow(row);
+        validateColumn(column);
+        return scrollback.get(row).get(column).getAttributes();
+    }
+
+    private void validateScrollbackRow(int row) {
+        if (row < 0 || row >= scrollback.size()) {
+            throw new IndexOutOfBoundsException("scrollback row out of bounds: " + row);
+        }
+    }
 }

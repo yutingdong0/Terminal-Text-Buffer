@@ -307,4 +307,68 @@ class TerminalBufferTest {
         assertEquals('A', buffer.getCharacterAt(1, 0));
         assertEquals(red, buffer.getAttributesAt(1, 0));
     }
+
+    @Test
+    void shouldInsertIntoMiddleOfLine() {
+        TerminalBuffer buffer = new TerminalBuffer(6, 2, 10);
+
+        buffer.writeText("abcd");
+        buffer.setCursorPosition(2, 0);
+        buffer.insertText("XY");
+
+        assertEquals("abXYcd", buffer.getLineAsString(0));
+    }
+
+    @Test
+    void shouldCarryOverflowToNextLine() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+
+        buffer.writeText("abcde");
+        buffer.writeText("fg");
+        buffer.setCursorPosition(3, 0);
+        buffer.insertText("XY");
+
+        assertEquals("abcXY", buffer.getLineAsString(0));
+        assertEquals("defg ", buffer.getLineAsString(1));
+    }
+
+    @Test
+    void shouldScrollWhenInsertPropagatesPastLastRow() {
+        TerminalBuffer buffer = new TerminalBuffer(4, 2, 10);
+
+        buffer.writeText("abcdefg");
+        buffer.setCursorPosition(1, 1);
+        buffer.insertText("XY");
+
+        assertEquals(1, buffer.getScrollbackSize());
+    }
+
+    @Test
+    void shouldPreserveAttributesWhenCellsAreShiftedByInsert() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+
+        TextAttributes red = new TextAttributes(
+                TerminalColor.RED,
+                TerminalColor.DEFAULT,
+                java.util.EnumSet.of(TextStyle.BOLD)
+        );
+        TextAttributes green = new TextAttributes(
+                TerminalColor.GREEN,
+                TerminalColor.DEFAULT,
+                java.util.EnumSet.noneOf(TextStyle.class)
+        );
+
+        buffer.setCurrentAttributes(red);
+        buffer.writeText("A");
+
+        buffer.setCurrentAttributes(green);
+        buffer.setCursorPosition(0, 0);
+        buffer.insertText("B");
+
+        assertEquals('B', buffer.getCharacterAt(0, 0));
+        assertEquals(green, buffer.getAttributesAt(0, 0));
+
+        assertEquals('A', buffer.getCharacterAt(1, 0));
+        assertEquals(red, buffer.getAttributesAt(1, 0));
+    }
 }
