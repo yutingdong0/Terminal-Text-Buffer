@@ -87,8 +87,8 @@ class TerminalBufferTest {
         buffer.writeText("abcd");
 
         assertEquals("   ab", buffer.getLineAsString(0));
-        assertEquals(4, buffer.getCursorColumn());
-        assertEquals(0, buffer.getCursorRow());
+        assertEquals(2, buffer.getCursorColumn());
+        assertEquals(1, buffer.getCursorRow());
     }
 
     @Test
