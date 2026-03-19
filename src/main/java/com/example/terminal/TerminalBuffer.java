@@ -1,0 +1,101 @@
+package com.example.terminal;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+public class TerminalBuffer {
+    private final int width;
+    private final int height;
+    private final int maxScrollback;
+
+    private final List<List<Cell>> screen;
+    private final List<List<Cell>> scrollback;
+
+    private final Cursor cursor;
+    private TextAttributes currentAttributes;
+
+    public TerminalBuffer(int width, int height, int maxScrollback) {
+        if (width <= 0) {
+            throw new IllegalArgumentException("width must be > 0");
+        }
+        if (height <= 0) {
+            throw new IllegalArgumentException("height must be > 0");
+        }
+        if (maxScrollback < 0) {
+            throw new IllegalArgumentException("maxScrollback must be >= 0");
+        }
+
+        this.width = width;
+        this.height = height;
+        this.maxScrollback = maxScrollback;
+        this.cursor = new Cursor(0, 0);
+        this.currentAttributes = TextAttributes.defaults();
+        this.screen = new ArrayList<>();
+        this.scrollback = new ArrayList<>();
+
+        for (int row = 0; row < height; row++) {
+            screen.add(createEmptyLine());
+        }
+    }
+
+    private List<Cell> createEmptyLine() {
+        List<Cell> line = new ArrayList<>(width);
+        for (int i = 0; i < width; i++) {
+            line.add(Cell.empty());
+        }
+        return line;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public int getMaxScrollback() {
+        return maxScrollback;
+    }
+
+    public int getCursorColumn() {
+        return cursor.getColumn();
+    }
+
+    public int getCursorRow() {
+        return cursor.getRow();
+    }
+
+    public void setCursorPosition(int column, int row) {
+        cursor.setPosition(clamp(column, 0, width - 1), clamp(row, 0, height - 1));
+    }
+
+    public void moveCursorRight(int n) {
+        setCursorPosition(cursor.getColumn() + n, cursor.getRow());
+    }
+
+    public void moveCursorLeft(int n) {
+        setCursorPosition(cursor.getColumn() - n, cursor.getRow());
+    }
+
+    public void moveCursorDown(int n) {
+        setCursorPosition(cursor.getColumn(), cursor.getRow() + n);
+    }
+
+    public void moveCursorUp(int n) {
+        setCursorPosition(cursor.getColumn(), cursor.getRow() - n);
+    }
+
+    public void setCurrentAttributes(TextAttributes attributes) {
+        this.currentAttributes = Objects.requireNonNull(attributes);
+    }
+
+    public TextAttributes getCurrentAttributes() {
+        return currentAttributes;
+    }
+
+    private int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+}
