@@ -371,4 +371,17 @@ class TerminalBufferTest {
         assertEquals('A', buffer.getCharacterAt(1, 0));
         assertEquals(red, buffer.getAttributesAt(1, 0));
     }
+
+    @Test
+    void shouldHandleWriteInsertAndScrollTogether() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+
+        buffer.writeText("abcdefghi");
+        buffer.setCursorPosition(2, 1);
+        buffer.insertText("XYZ");
+
+        assertEquals("abcde", buffer.getScrollbackLineAsString(0));
+        assertEquals("fghXY", buffer.getLineAsString(0));
+        assertEquals("Zi   ", buffer.getLineAsString(1));
+    }
 }
