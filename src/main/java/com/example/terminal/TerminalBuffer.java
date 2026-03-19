@@ -233,4 +233,71 @@ public class TerminalBuffer {
 
         return sb.toString();
     }
+
+    public void clearScreen() {
+        screen.clear();
+        for (int row = 0; row < height; row++) {
+            screen.add(createEmptyLine());
+        }
+        cursor.setPosition(0, 0);
+    }
+
+    public void clearScreenAndScrollback() {
+        clearScreen();
+        scrollback.clear();
+    }
+
+    public void fillLine(int row, char ch) {
+        validateRow(row);
+
+        List<Cell> line = new ArrayList<>(width);
+        for (int i = 0; i < width; i++) {
+            line.add(new Cell(ch, currentAttributes));
+        }
+        screen.set(row, line);
+    }
+
+    public void clearLine(int row) {
+        validateRow(row);
+        screen.set(row, createEmptyLine());
+    }
+
+    public void insertEmptyLineAtBottom() {
+        List<Cell> topLine = screen.remove(0);
+        addToScrollback(topLine);
+        screen.add(createEmptyLine());
+    }
+
+    public char getCharacterAtGlobal(int column, int row) {
+        List<Cell> line = getGlobalLine(row);
+        validateColumn(column);
+        return line.get(column).getCharacter();
+    }
+
+    public TextAttributes getAttributesAtGlobal(int column, int row) {
+        List<Cell> line = getGlobalLine(row);
+        validateColumn(column);
+        return line.get(column).getAttributes();
+    }
+
+    public String getGlobalLineAsString(int row) {
+        List<Cell> line = getGlobalLine(row);
+        StringBuilder sb = new StringBuilder(width);
+        for (Cell cell : line) {
+            sb.append(cell.getCharacter());
+        }
+        return sb.toString();
+    }
+
+    private List<Cell> getGlobalLine(int row) {
+        if (row < 0 || row >= scrollback.size() + screen.size()) {
+            throw new IndexOutOfBoundsException("global row out of bounds: " + row);
+        }
+
+        if (row < scrollback.size()) {
+            return scrollback.get(row);
+        }
+
+        return screen.get(row - scrollback.size());
+    }
 }

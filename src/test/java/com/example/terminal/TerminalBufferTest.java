@@ -159,4 +159,69 @@ class TerminalBufferTest {
                 buffer.getAllContentAsString()
         );
     }
+
+    @Test
+    void shouldClearScreenButKeepScrollback() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+        buffer.writeText("abcdefghijk"); // creates scrollback
+
+        buffer.clearScreen();
+
+        assertEquals(1, buffer.getScrollbackSize());
+        assertEquals("     ", buffer.getLineAsString(0));
+        assertEquals("     ", buffer.getLineAsString(1));
+        assertEquals(0, buffer.getCursorColumn());
+        assertEquals(0, buffer.getCursorRow());
+    }
+
+    @Test
+    void shouldClearScreenAndScrollback() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+        buffer.writeText("abcdefghijk");
+
+        buffer.clearScreenAndScrollback();
+
+        assertEquals(0, buffer.getScrollbackSize());
+        assertEquals("     ", buffer.getLineAsString(0));
+        assertEquals("     ", buffer.getLineAsString(1));
+    }
+
+    @Test
+    void shouldFillLineWithCharacterUsingCurrentAttributes() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+        TextAttributes attrs = new TextAttributes(
+                TerminalColor.GREEN,
+                TerminalColor.BLACK,
+                java.util.EnumSet.of(TextStyle.UNDERLINE)
+        );
+
+        buffer.setCurrentAttributes(attrs);
+        buffer.fillLine(1, 'x');
+
+        assertEquals("xxxxx", buffer.getLineAsString(1));
+        assertEquals(attrs, buffer.getAttributesAt(0, 1));
+    }
+
+    @Test
+    void shouldInsertEmptyLineAtBottomAndPushTopLineToScrollback() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+        buffer.writeText("abcdefghi"); // fills two lines except for last position
+
+        buffer.insertEmptyLineAtBottom();
+
+        assertEquals(1, buffer.getScrollbackSize());
+        assertEquals("abcde", buffer.getScrollbackLineAsString(0));
+        assertEquals("fghi ", buffer.getLineAsString(0));
+        assertEquals("     ", buffer.getLineAsString(1));
+    }
+
+    @Test
+    void shouldAccessContentAcrossScrollbackAndScreen() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+        buffer.writeText("abcdefghijk");
+
+        assertEquals("abcde", buffer.getGlobalLineAsString(0));
+        assertEquals("fghij", buffer.getGlobalLineAsString(1));
+        assertEquals("k    ", buffer.getGlobalLineAsString(2));
+    }
 }
