@@ -373,15 +373,26 @@ class TerminalBufferTest {
     }
 
     @Test
-    void shouldHandleWriteInsertAndScrollTogether() {
+    void shouldPropagateOverflowToNextLineDuringInsert() {
         TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
 
-        buffer.writeText("abcdefghi");
-        buffer.setCursorPosition(2, 1);
-        buffer.insertText("XYZ");
+        buffer.writeText("abcdefg");
+        buffer.setCursorPosition(2, 0);
+        buffer.insertText("XY");
 
-        assertEquals("abcde", buffer.getScrollbackLineAsString(0));
-        assertEquals("fghXY", buffer.getLineAsString(0));
-        assertEquals("Zi   ", buffer.getLineAsString(1));
+        assertEquals("abXYc", buffer.getLineAsString(0));
+        assertEquals("defg ", buffer.getLineAsString(1));
+    }
+
+    @Test
+    void shouldScrollWhenInsertPushesNonEmptyCellPastBottomLine() {
+        TerminalBuffer buffer = new TerminalBuffer(5, 2, 10);
+
+        buffer.fillLine(0, 'a');
+        buffer.fillLine(1, 'b');
+        buffer.setCursorPosition(2, 1);
+        buffer.insertText("X");
+
+        assertEquals(1, buffer.getScrollbackSize());
     }
 }
